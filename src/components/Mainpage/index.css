@@ -1,0 +1,26 @@
+
+/* Ensure this file is saved as src/index.css or src/components/index.css depending on your directory structure */
+
+.main-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #f0f0f0; 
+  }
+  
+  .styled-button {
+    margin: 10px 0; 
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #ffffff;
+    background-color: #007bff; 
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 200px; 
+    height: 50px; 
+  }
+ 
