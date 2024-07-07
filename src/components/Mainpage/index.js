@@ -23,7 +23,6 @@ const Mainpage = () => {
       <button className="styled-button" onClick={handleAttendanceClick}>
         Attendance
       </button>
-      <button className="styled-button">Special</button>
     </div>
   );
 };
