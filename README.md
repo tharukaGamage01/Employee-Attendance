@@ -7,7 +7,17 @@
 ## Development
 
 To get a local copy of the code, clone it using git:
-Add .env file to add firebase configurations to the file:
+
+Create a .env file and add firebase configurations to that file:
+```
+REACT_APP_API_KEY=
+REACT_APP_AUTH_DOMAIN=
+REACT_APP_PROJECT_ID=
+REACT_APP_STORAGE_BUCKET=
+REACT_APP_MESSAGING_SENDER_ID=
+REACT_APP_APP_ID=
+REACT_APP_MEASUREMENT_ID=
+```
 
 
 Install dependencies:
