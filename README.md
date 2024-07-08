@@ -7,6 +7,7 @@
 ## Development
 
 To get a local copy of the code, clone it using git:
+Add .env file to add firebase configurations to the file:
 
 
 Install dependencies:
