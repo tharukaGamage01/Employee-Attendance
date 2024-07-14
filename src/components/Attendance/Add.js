@@ -90,6 +90,10 @@ const Add = ({ attendances, setAttendances, setIsAdding, getAttendances }) => {
         fullName,
         timeStamp: new Date(),
         timeOut: null,
+        lunchIn: null,
+        lunchOut: null,
+        meetingIn: null,
+        meetingOut: null,
       };
 
       try {
@@ -142,8 +146,32 @@ const Add = ({ attendances, setAttendances, setIsAdding, getAttendances }) => {
       }
 
       const attendanceDoc = querySnapshot.docs[0];
-      //const attendanceData = attendanceDoc.data();
+      const attendanceData = attendanceDoc.data();
       const attendanceId = attendanceDoc.id;
+
+      if (
+        (attendanceData.lunchIn && !attendanceData.lunchOut) ||
+        (!attendanceData.lunchIn && attendanceData.lunchOut)
+      ) {
+        return Swal.fire({
+          icon: "error",
+          title: "Error!",
+          text: "Update the lunch time before Clock-Out",
+          showConfirmButton: true,
+        });
+      }
+
+      if (
+        (attendanceData.meetingIn && !attendanceData.meetingOut) ||
+        (!attendanceData.meetingIn && attendanceData.meetingOut)
+      ) {
+        return Swal.fire({
+          icon: "error",
+          title: "Error!",
+          text: "Update the Meeting time before Clock-Out",
+          showConfirmButton: true,
+        });
+      }
 
       try {
         await updateDoc(doc(db, "attendance", attendanceId), {
