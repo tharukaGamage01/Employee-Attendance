@@ -17,6 +17,7 @@ const General = ({
   setIsAdding,
   setIsViewingGeneral,
   getAttendances,
+  setLateLunches,
 }) => {
   const [PID, setPID] = useState("");
   const [fullName, setFullName] = useState("");
@@ -82,109 +83,107 @@ const General = ({
 
     const querySnapshot = await getDocs(q);
 
+    if (querySnapshot.empty) {
+      return Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: `No existing attendance record found for PID ${PID} today to update.`,
+        showConfirmButton: true,
+      });
+    }
+
+    const attendanceDoc = querySnapshot.docs[0];
+    const attendanceId = attendanceDoc.id;
+    const updateData = {};
+
     if (attendanceFlag === "1") {
-      if (querySnapshot.empty) {
-        return Swal.fire({
-          icon: "error",
-          title: "Error!",
-          text: `No existing attendance record found for PID ${PID} today to update clock-in.`,
-          showConfirmButton: true,
-        });
-      }
-
-      const attendanceDoc = querySnapshot.docs[0];
-      const attendanceId = attendanceDoc.id;
-      const updateData = {};
-
       if (generalType === "l") {
         updateData.lunchIn = new Date();
       } else if (generalType === "m") {
         updateData.meetingIn = new Date();
       }
-
-      try {
-        await updateDoc(doc(db, "attendance", attendanceId), updateData);
-
-        setAttendances((prevAttendances) =>
-          prevAttendances.map((attendance) =>
-            attendance.id === attendanceId
-              ? { ...attendance, ...updateData }
-              : attendance
-          )
-        );
-
-        setIsAdding(false);
-        setIsViewingGeneral(false); // Add this line to toggle back to the table view
-        getAttendances();
-
-        Swal.fire({
-          icon: "success",
-          title: "Updated!",
-          text: `Clock-In updated for ${fullName}.`,
-          showConfirmButton: false,
-          timer: 1500,
-        });
-      } catch (error) {
-        console.log(error);
-        Swal.fire({
-          icon: "error",
-          title: "Error!",
-          text: "Failed to update clock-in.",
-          showConfirmButton: true,
-        });
-      }
     } else if (attendanceFlag === "0") {
-      if (querySnapshot.empty) {
-        return Swal.fire({
-          icon: "error",
-          title: "Error!",
-          text: `No attendance found for PID ${PID} today to update clock-out.`,
-          showConfirmButton: true,
-        });
-      }
-
-      const attendanceDoc = querySnapshot.docs[0];
-      const attendanceId = attendanceDoc.id;
-      const updateData = {};
-
       if (generalType === "l") {
         updateData.lunchOut = new Date();
       } else if (generalType === "m") {
         updateData.meetingOut = new Date();
       }
-
-      try {
-        await updateDoc(doc(db, "attendance", attendanceId), updateData);
-
-        setAttendances((prevAttendances) =>
-          prevAttendances.map((attendance) =>
-            attendance.id === attendanceId
-              ? { ...attendance, ...updateData }
-              : attendance
-          )
-        );
-
-        setIsAdding(false);
-        setIsViewingGeneral(false); // Add this line to toggle back to the table view
-        getAttendances();
-
-        Swal.fire({
-          icon: "success",
-          title: "Updated!",
-          text: `Clock-Out updated for ${fullName}.`,
-          showConfirmButton: false,
-          timer: 1500,
-        });
-      } catch (error) {
-        console.log(error);
-        Swal.fire({
-          icon: "error",
-          title: "Error!",
-          text: "Failed to update clock-out.",
-          showConfirmButton: true,
-        });
-      }
     }
+
+    try {
+      await updateDoc(doc(db, "attendance", attendanceId), updateData);
+      console.log("Update successful:", updateData);
+    } catch (error) {
+      console.error("Error updating document:", error);
+      return Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Failed to update record.",
+        showConfirmButton: true,
+      });
+    }
+
+    try {
+      setAttendances((prevAttendances) =>
+        prevAttendances.map((attendance) =>
+          attendance.id === attendanceId
+            ? { ...attendance, ...updateData }
+            : attendance
+        )
+      );
+    } catch (error) {
+      console.error("Error updating attendances state:", error);
+    }
+
+    try {
+      getAttendances();
+      setIsAdding(false);
+      setIsViewingGeneral(false);
+    } catch (error) {
+      console.error(
+        "Error refreshing attendances or updating view state:",
+        error
+      );
+    }
+
+    try {
+      const updatedAttendance = {
+        ...querySnapshot.docs[0].data(),
+        ...updateData,
+      };
+
+      if (
+        updatedAttendance.lunchIn &&
+        updatedAttendance.lunchOut &&
+        generalType === "l"
+      ) {
+        const lunchDuration =
+          (updatedAttendance.lunchOut.toDate() -
+            updatedAttendance.lunchIn.toDate()) /
+          (1000 * 60);
+
+        if (lunchDuration > 1) {
+          setLateLunches((prevLateLunches) => [
+            ...prevLateLunches,
+            {
+              PID: updatedAttendance.PID,
+              fullName: fullName,
+              lunchDuration: lunchDuration.toFixed(2),
+            },
+          ]);
+        }
+      }
+    } catch (error) {
+      console.error("Error updating late lunches:", error);
+    }
+
+    Swal.fire({
+      icon: "success",
+      title: "Updated!",
+      text: `Record updated for ${fullName}.`,
+      showConfirmButton: false,
+      timer: 1500,
+    });
   };
 
   return (

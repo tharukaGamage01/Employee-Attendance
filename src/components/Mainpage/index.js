@@ -15,6 +15,10 @@ const Mainpage = () => {
     navigate("/attendance");
   };
 
+  // const handleLateCountClick = () => {
+  //   navigate("lateCount");
+  // };
+
   return (
     <div className="main-container">
       <button className="styled-button" onClick={handleEmployeesClick}>
@@ -23,6 +27,9 @@ const Mainpage = () => {
       <button className="styled-button" onClick={handleAttendanceClick}>
         Attendance
       </button>
+      {/* <button className="styled-button" onClick={handleLateCountClick}>
+        Late Count
+      </button> */}
     </div>
   );
 };

@@ -10,6 +10,7 @@ import Login from "../Login";
 import Dashboard from "../Dashboard";
 import Mainpage from "../Mainpage";
 import Attendance from "../Attendance";
+import LateCount from "../LateCount";
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
@@ -39,6 +40,10 @@ const App = () => {
         <Route
           path="/attendance"
           element={isAuthenticated ? <Attendance /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/lateCount"
+          element={isAuthenticated ? <LateCount /> : <Navigate to="/" />}
         />
       </Routes>
     </Router>

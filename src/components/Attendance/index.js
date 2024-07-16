@@ -5,6 +5,7 @@ import Header from "./Header";
 import Table from "./Table";
 import Add from "./Add";
 import General from "./General";
+import LateCount from "../LateCount";
 import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
 import { db } from "../../config/firestore";
 
@@ -16,6 +17,7 @@ const Attendance = ({ setIsAuthenticated }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isAttend, setIsAttend] = useState(false);
   const [isViewingGeneral, setIsViewingGeneral] = useState(false);
+  const [lateLunches, setLateLunches] = useState([]);
 
   const getAttendances = async () => {
     const querySnapshot = await getDocs(collection(db, "attendance"));
@@ -25,6 +27,32 @@ const Attendance = ({ setIsAuthenticated }) => {
     }));
     setAttendances(attendances);
     setFilteredAttendances(attendances);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const lateLunchesToday = attendances
+      .filter((attendance) => {
+        if (attendance.lunchIn && attendance.lunchOut) {
+          const lunchInDate = attendance.lunchIn.toDate();
+          lunchInDate.setHours(0, 0, 0, 0);
+          return lunchInDate.getTime() === today.getTime();
+        }
+        return false;
+      })
+      .map((attendance) => {
+        const lunchDuration =
+          (attendance.lunchOut.toDate() - attendance.lunchIn.toDate()) /
+          (1000 * 60);
+        return {
+          PID: attendance.PID,
+          fullName: attendance.fullName,
+          lunchDuration: lunchDuration.toFixed(2),
+          lunchIn: attendance.lunchIn.toDate().toLocaleString(),
+          lunchOut: attendance.lunchOut.toDate().toLocaleString(),
+        };
+      })
+      .filter((attendance) => attendance.lunchDuration > 1);
+    setLateLunches(lateLunchesToday);
   };
 
   useEffect(() => {
@@ -48,33 +76,51 @@ const Attendance = ({ setIsAuthenticated }) => {
       confirmButtonText: "Yes, delete it!",
       cancelButtonText: "No, cancel!",
     }).then((result) => {
-      if (result.value) {
-        deleteDoc(doc(db, "attendance", id));
+      if (result.isConfirmed) {
+        deleteDoc(doc(db, "attendance", id))
+          .then(() => {
+            Swal.fire({
+              icon: "success",
+              title: "Deleted!",
+              text: `Attendance record has been deleted.`,
+              showConfirmButton: false,
+              timer: 1500,
+            });
 
-        Swal.fire({
-          icon: "success",
-          title: "Deleted!",
-          text: `Attendance record has been deleted.`,
-          showConfirmButton: false,
-          timer: 1500,
-        });
-
-        const attendancesCopy = attendances.filter(
-          (attendance) => attendance.id !== id
-        );
-        setAttendances(attendancesCopy);
-        setFilteredAttendances(attendancesCopy);
+            const attendancesCopy = attendances.filter(
+              (attendance) => attendance.id !== id
+            );
+            setAttendances(attendancesCopy);
+            setFilteredAttendances(attendancesCopy);
+          })
+          .catch((error) => {
+            console.error("Error deleting document: ", error);
+            Swal.fire({
+              icon: "error",
+              title: "Error!",
+              text: "Failed to delete attendance record.",
+              showConfirmButton: true,
+            });
+          });
       }
     });
   };
 
   const handleDownloadCSV = () => {
-    const headers = ["PID", "Full Name", "Time Stamp"];
+    const headers = [
+      "PID",
+      "Full Name",
+      "Clock In",
+      "Clock Out",
+      "Lunch",
+      "Meeting",
+    ];
 
     const data = filteredAttendances.map((attendance) => [
       attendance.PID,
       attendance.fullName,
-      attendance.timeStamp.toDate().toLocaleString(),
+      //attendance.timeStamp.toDate().toLocaleString(),
+      //attendance.timeOut.toDate().toLocaleString(),
     ]);
 
     const content = `${headers.join(",")}\n${data
@@ -82,7 +128,7 @@ const Attendance = ({ setIsAuthenticated }) => {
       .join("\n")}`;
 
     const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
-    saveAs(blob, "attendance.csv");
+    saveAs(blob, "Employees Daily Report.csv");
   };
 
   const handleSearch = (query) => {
@@ -127,6 +173,7 @@ const Attendance = ({ setIsAuthenticated }) => {
               Download CSV
             </button>
           </div>
+          <LateCount lateLunches={lateLunches} />
         </>
       )}
       {isAdding && (
@@ -144,6 +191,7 @@ const Attendance = ({ setIsAuthenticated }) => {
           setIsAdding={setIsAdding}
           getAttendances={getAttendances}
           setIsViewingGeneral={setIsViewingGeneral}
+          setLateLunches={setLateLunches}
         />
       )}
     </div>
