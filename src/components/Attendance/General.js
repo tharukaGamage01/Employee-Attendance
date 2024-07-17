@@ -157,18 +157,21 @@ const General = ({
         updatedAttendance.lunchOut &&
         generalType === "l"
       ) {
-        const lunchDuration =
-          (updatedAttendance.lunchOut.toDate() -
-            updatedAttendance.lunchIn.toDate()) /
-          (1000 * 60);
+        const lunchDurationMs =
+          updatedAttendance.lunchOut.toDate() -
+          updatedAttendance.lunchIn.toDate();
+        const minutes = Math.floor(lunchDurationMs / 60000);
+        const seconds = Math.floor((lunchDurationMs % 60000) / 1000);
 
-        if (lunchDuration > 1) {
+        if (minutes > 1 || (minutes === 1 && seconds > 0)) {
           setLateLunches((prevLateLunches) => [
             ...prevLateLunches,
             {
               PID: updatedAttendance.PID,
               fullName: fullName,
-              lunchDuration: lunchDuration.toFixed(2),
+              lunchDuration: `${minutes} min${
+                minutes !== 1 ? "s" : ""
+              } ${seconds} s`,
             },
           ]);
         }

@@ -41,6 +41,9 @@ const Logout = ({ setIsAuthenticated }) => {
       onClick={handleLogout}
     >
       Logout
+      <span>
+        <br></br>
+      </span>
     </button>
   );
 };

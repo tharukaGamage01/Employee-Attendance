@@ -4,7 +4,12 @@ import Logout from "../Logout";
 const Header = ({ setIsAdding, setIsAuthenticated, setIsViewingGeneral }) => {
   return (
     <header>
-      <h1>The Employee TimeSheet</h1>
+      <h1>
+        <span>
+          <br></br>
+        </span>
+        The Employee TimeSheet
+      </h1>
       <div style={{ marginTop: "30px", marginBottom: "18px" }}>
         <button
           style={{
@@ -17,7 +22,7 @@ const Header = ({ setIsAdding, setIsAuthenticated, setIsViewingGeneral }) => {
             setIsViewingGeneral(false);
           }}
         >
-          Time
+          General
         </button>
         <button
           style={{
@@ -31,7 +36,7 @@ const Header = ({ setIsAdding, setIsAuthenticated, setIsViewingGeneral }) => {
             setIsViewingGeneral(true);
           }}
         >
-          General
+          Other
         </button>
         <Logout setIsAuthenticated={setIsAuthenticated} />
       </div>

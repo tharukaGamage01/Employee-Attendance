@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
-import { saveAs } from "file-saver";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 import Header from "./Header";
 import Table from "./Table";
 import Add from "./Add";
@@ -40,18 +41,22 @@ const Attendance = ({ setIsAuthenticated }) => {
         return false;
       })
       .map((attendance) => {
-        const lunchDuration =
-          (attendance.lunchOut.toDate() - attendance.lunchIn.toDate()) /
-          (1000 * 60);
+        const lunchDurationMs =
+          attendance.lunchOut.toDate() - attendance.lunchIn.toDate();
+        const minutes = Math.floor(lunchDurationMs / 60000);
+        const seconds = Math.floor((lunchDurationMs % 60000) / 1000);
         return {
           PID: attendance.PID,
           fullName: attendance.fullName,
-          lunchDuration: lunchDuration.toFixed(2),
+          lunchDuration: `${minutes} mins ${seconds} s`,
           lunchIn: attendance.lunchIn.toDate().toLocaleString(),
           lunchOut: attendance.lunchOut.toDate().toLocaleString(),
         };
       })
-      .filter((attendance) => attendance.lunchDuration > 1);
+      .filter((attendance) => {
+        const [minutes] = attendance.lunchDuration.split(" ");
+        return parseInt(minutes) > 1;
+      });
     setLateLunches(lateLunchesToday);
   };
 
@@ -106,29 +111,72 @@ const Attendance = ({ setIsAuthenticated }) => {
     });
   };
 
-  const handleDownloadCSV = () => {
+  const handleDownloadAttendancePDF = () => {
+    const doc = new jsPDF();
+
     const headers = [
       "PID",
       "Full Name",
-      "Clock In",
-      "Clock Out",
-      "Lunch",
-      "Meeting",
+      "Clock-In",
+      "Clock-Out",
+      "Lunch Clock-In",
+      "Lunch Clock-Out",
+      "Meeting Clock-In",
+      "Meeting Clock-Out",
     ];
 
     const data = filteredAttendances.map((attendance) => [
       attendance.PID,
       attendance.fullName,
-      //attendance.timeStamp.toDate().toLocaleString(),
-      //attendance.timeOut.toDate().toLocaleString(),
+      attendance.timeStamp
+        ? attendance.timeStamp.toDate().toLocaleString()
+        : "",
+      attendance.timeOut ? attendance.timeOut.toDate().toLocaleString() : "",
+      attendance.lunchIn ? attendance.lunchIn.toDate().toLocaleString() : "",
+      attendance.lunchOut ? attendance.lunchOut.toDate().toLocaleString() : "",
+      attendance.meetingIn
+        ? attendance.meetingIn.toDate().toLocaleString()
+        : "",
+      attendance.meetingOut
+        ? attendance.meetingOut.toDate().toLocaleString()
+        : "",
     ]);
 
-    const content = `${headers.join(",")}\n${data
-      .map((row) => row.join(","))
-      .join("\n")}`;
+    doc.autoTable({
+      head: [headers],
+      body: data,
+      startY: 10,
+    });
 
-    const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
-    saveAs(blob, "Employees Daily Report.csv");
+    doc.save("Attendance.pdf");
+  };
+
+  const handleDownloadLateLunchPDF = () => {
+    const doc = new jsPDF();
+
+    const headers = [
+      "PID",
+      "Full Name",
+      "Lunch Clock-In",
+      "Lunch Clock-Out",
+      "Lunch Duration (mins)",
+    ];
+
+    const data = lateLunches.map((lunch) => [
+      lunch.PID,
+      lunch.fullName,
+      lunch.lunchIn,
+      lunch.lunchOut,
+      lunch.lunchDuration,
+    ]);
+
+    doc.autoTable({
+      head: [headers],
+      body: data,
+      startY: 10,
+    });
+
+    doc.save("Late_Lunches.pdf");
   };
 
   const handleSearch = (query) => {
@@ -156,24 +204,51 @@ const Attendance = ({ setIsAuthenticated }) => {
             handleEdit={handleEdit}
             handleDelete={handleDelete}
           />
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginTop: "10px",
+            }}
+          >
             <button
               style={{
                 borderRadius: "5px",
-                fontSize: "12px",
+                fontSize: "14px",
                 color: "#ffffff",
                 backgroundColor: "#28a745",
                 border: "none",
-                padding: "10px 10px",
+                padding: "10px 15px",
                 cursor: "pointer",
-                marginRight: "10px",
               }}
-              onClick={handleDownloadCSV}
+              onClick={handleDownloadAttendancePDF}
             >
-              Download CSV
+              Download Attendance PDF
             </button>
           </div>
           <LateCount lateLunches={lateLunches} />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginTop: "10px",
+            }}
+          >
+            <button
+              style={{
+                borderRadius: "5px",
+                fontSize: "14px",
+                color: "#000000",
+                backgroundColor: "#ffc107",
+                border: "none",
+                padding: "10px 15px",
+                cursor: "pointer",
+              }}
+              onClick={handleDownloadLateLunchPDF}
+            >
+              Download Late Lunches PDF
+            </button>
+          </div>
         </>
       )}
       {isAdding && (
